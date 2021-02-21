@@ -1,3 +1,5 @@
+Project for visualizing the process of Piecewise Aggregate Approximation (PAA) and Symbolic Aggregate Approximation on time series.   
+
 To install project requirements, create and activate a virtual pip environment for this project. Then run:  
 pip install -r requirements.txt  
 

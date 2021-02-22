@@ -14,6 +14,8 @@ async def update_gui(values, tm):
         ts_seed = values['ts_seed']
         if ts_seed != '':
             ts_seed = int(ts_seed)
+            if ts_seed > 9999999:
+                ts_seed = 999999
             is_input_valid = True
             tm.create_random_walk_ts(1, 200, 1, seed=ts_seed)
             tm.create_scaled_ts(0, 1)

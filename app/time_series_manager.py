@@ -22,6 +22,9 @@ class TimeSeriesManager:
         self.paa_ts = paa.inverse_transform(paa.fit_transform(self.scaled_ts))
 
     def create_random_walk_ts(self, n_ts, sz, d, seed):
+        max_ts_seed = 9999999
+        if seed > max_ts_seed:
+            seed = max_ts_seed
         np.random.seed(seed)
         self.random_walk_ts = random_walks(n_ts=n_ts, sz=sz, d=d)
 
@@ -43,11 +46,19 @@ class TimeSeriesManager:
     def set_n_sax_symbols(self, n_sax_symbols: int):
         if n_sax_symbols < 1:
             raise ValueError('Ints for n_sax_symbols smaller than 1 forbidden')
+
+        max_n_sax_symbols = 99
+        if n_sax_symbols > max_n_sax_symbols:
+            n_sax_symbols = max_n_sax_symbols
         self.n_sax_symbols = n_sax_symbols
 
     def set_n_paa_segments(self, n_paa_segments: int):
         if n_paa_segments < 1:
             raise ValueError('Ints for n_paa_segments smaller than 1 forbidden')
+
+        max_n_paa_segments = 99
+        if n_paa_segments > max_n_paa_segments:
+            n_paa_segments = max_n_paa_segments
         self.n_paa_segments = n_paa_segments
 
 

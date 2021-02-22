@@ -1,11 +1,11 @@
 import asyncio
-from app import time_series_manager, view
-import PySimpleGUI as sg
+from app import view
+from app.time_series_manager import TimeSeriesManager
 import sys
 import traceback
 
 
-async def update_gui(values):
+async def update_gui(values, tm):
     keys_to_clear = ['n_paa_segments', 'n_sax_symbols', 'ts_seed']
     is_input_valid = False
     try:
@@ -15,8 +15,8 @@ async def update_gui(values):
         if ts_seed != '':
             ts_seed = int(ts_seed)
             is_input_valid = True
-            time_series_manager.create_random_walk_ts(1, 200, 1, seed=ts_seed)
-            time_series_manager.create_scaled_ts(0, 1)
+            tm.create_random_walk_ts(1, 200, 1, seed=ts_seed)
+            tm.create_scaled_ts(0, 1)
         if n_paa_segments != '':
             n_paa_segments = int(n_paa_segments)
             is_input_valid = True
@@ -24,7 +24,7 @@ async def update_gui(values):
                 n_paa_segments = 99
             if n_paa_segments < 1:
                 raise ValueError
-            time_series_manager.set_n_paa_segments(n_paa_segments)
+            tm.set_n_paa_segments(n_paa_segments)
 
         if n_sax_symbols != '':
             n_sax_symbols = int(n_sax_symbols)
@@ -33,16 +33,16 @@ async def update_gui(values):
                 n_sax_symbols = 99
             if n_sax_symbols < 1:
                 raise ValueError
-            time_series_manager.set_n_sax_symbols(n_sax_symbols)
+            tm.set_n_sax_symbols(n_sax_symbols)
 
         if is_input_valid:
-            time_series_manager.create_paa_ts()
-            time_series_manager.generate_sax_symbols()
-            tf = time_series_manager.count_sax_symbols()
+            tm.create_paa_ts()
+            tm.generate_sax_symbols()
+            tf = tm.count_sax_symbols()
             view.reset_and_draw_plots(
-                time_series_manager.random_walk_ts[0].ravel(),
-                time_series_manager.scaled_ts[0].ravel(),
-                time_series_manager.paa_ts[0].ravel(),
+                tm.random_walk_ts[0].ravel(),
+                tm.scaled_ts[0].ravel(),
+                tm.paa_ts[0].ravel(),
                 tf
             )
 
@@ -54,27 +54,27 @@ async def update_gui(values):
         view.window[key]('')
 
 
-def run_gui():
-    while True:
-        event, values = view.window.read()
-        if event == sg.WIN_CLOSED or event == 'Close':
-            view.window.close()
-            sys.exit()
-        if event == 'Update':
-            asyncio.run(update_gui(values))
+def on_close_pressed(window):
+    window.close()
+    sys.exit()
+
+
+def on_update_pressed(values, tm):
+    asyncio.run(update_gui(values, tm))
 
 
 if __name__ == '__main__':
-    time_series_manager = time_series_manager.TimeSeriesManager(9, 5)
-    time_series_manager.create_random_walk_ts(1, 200, 1, 10)
-    time_series_manager.create_scaled_ts(0, 1)
-    time_series_manager.create_paa_ts()
-    time_series_manager.generate_sax_symbols()
-    tf = time_series_manager.count_sax_symbols()
-    view.init_layout(time_series_manager.random_walk_ts[0].ravel(),
-                     time_series_manager.scaled_ts[0].ravel(),
-                     time_series_manager.paa_ts[0].ravel(),
+    tm = TimeSeriesManager(9, 5)
+    tm.create_random_walk_ts(1, 200, 1, 10)
+    tm.create_scaled_ts(0, 1)
+    tm.create_paa_ts()
+    tm.generate_sax_symbols()
+    tf = tm.count_sax_symbols()
+
+    view.init_layout(tm.random_walk_ts[0].ravel(),
+                     tm.scaled_ts[0].ravel(),
+                     tm.paa_ts[0].ravel(),
                      tf)
-    run_gui()
+    view.run_gui(tm)
 
 

@@ -3,6 +3,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import MaxNLocator
 import matplotlib
 import matplotlib.pyplot as plt
+from app import main
 
 matplotlib.use("TkAgg")
 sg.theme('DarkAmber')
@@ -74,4 +75,12 @@ def reset_and_draw_plots(ts, scaled_ts, paa_ts, tf):
         tf
     )
 
+
+def run_gui(tm):
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == 'Close':
+            main.on_close_pressed(window)
+        if event == 'Update':
+            main.on_update_pressed(values, tm)
 

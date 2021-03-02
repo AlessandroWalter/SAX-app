@@ -1,3 +1,4 @@
+from app.subject import Subject
 import numpy as np
 from tslearn.generators import random_walks
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
@@ -5,62 +6,95 @@ from tslearn.piecewise import PiecewiseAggregateApproximation
 from tslearn.piecewise import SymbolicAggregateApproximation
 
 
-class TimeSeriesManager:
+class TimeSeriesManager(Subject):
 
-    def __init__(self, n_paa_segments: int, n_sax_symbols: int):
-        self.n_paa_segments = None
-        self.n_sax_symbols = None
-        self.set_n_paa_segments(n_paa_segments)
-        self.set_n_sax_symbols(n_sax_symbols)
-        self.random_walk_ts = None
-        self.scaled_ts = None
-        self.paa_ts = None
-        self.sax_symbols = None
+    def __init__(self, _n_paa_segments, _n_sax_symbols):
+        self._n_paa_segments = None
+        self._n_sax_symbols = None
+        self.set_n_paa_segments(_n_paa_segments)
+        self.set_n_sax_symbols(_n_sax_symbols)
+        self._base_ts = None
+        self._scaled_ts = None
+        self._paa_ts = None
+        self._sax_symbols = None
+        self._observers = []
 
-    def create_paa_ts(self):
-        paa = PiecewiseAggregateApproximation(n_segments=self.n_paa_segments)
-        self.paa_ts = paa.inverse_transform(paa.fit_transform(self.scaled_ts))
+    def get_n_paa_segments(self):
+        return self._n_paa_segments
 
-    def create_random_walk_ts(self, n_ts, sz, d, seed):
-        max_ts_seed = 9999999
-        if seed > max_ts_seed:
-            seed = max_ts_seed
+    def set_n_paa_segments(self, n_paa_segments):
+        min_n_paa_segments, max_n_paa_segments = 1, 99
+        if (n_paa_segments < min_n_paa_segments) | (n_paa_segments > max_n_paa_segments):
+            error_msg = (f'Ints for n_paa_segments smaller than {min_n_paa_segments} or greater than '
+                         f' {max_n_paa_segments} forbidden')
+            raise ValueError(error_msg)
+        self._n_paa_segments = n_paa_segments
+
+    def get_n_sax_symbols(self):
+        return self._n_sax_symbols
+
+    def set_n_sax_symbols(self, n_sax_symbols):
+        min_n_sax_symbols, max_n_sax_symbols = 1, 99
+        if (n_sax_symbols < min_n_sax_symbols) | (n_sax_symbols > max_n_sax_symbols):
+            error_msg = (f'Ints for n_sax_symbols smaller than {min_n_sax_symbols} or greater than {max_n_sax_symbols}'
+                         f' forbidden')
+            raise ValueError(error_msg)
+        self._n_sax_symbols = n_sax_symbols
+
+    def set_paa_ts(self, paa_ts):
+        self._paa_ts = paa_ts
+
+    def get_paa_ts(self):
+        return self._paa_ts
+
+    def get_base_ts(self):
+        return self._base_ts
+
+    def set_base_ts(self, ts):
+        self._base_ts = ts
+
+    def get_scaled_ts(self):
+        return self._scaled_ts
+
+    def set_scaled_ts(self, scaled_ts):
+        self._scaled_ts = scaled_ts
+
+    def get_sax_symbols(self):
+        return self._sax_symbols
+
+    def attach(self, observer):
+        self._observers.append(observer)
+
+    def create_and_update_paa_ts(self, n_paa_segments, scaled_ts):
+        paa = PiecewiseAggregateApproximation(n_segments=n_paa_segments)
+        self._paa_ts = paa.inverse_transform(paa.fit_transform(scaled_ts))
+
+    @staticmethod
+    def create_random_walk_ts(n_ts, size, n_dimensions, seed):
+        max_seed = 9999999
+        if seed > max_seed:
+            raise ValueError(f'Seeds greater than {max_seed} forbidden')
         np.random.seed(seed)
-        self.random_walk_ts = random_walks(n_ts=n_ts, sz=sz, d=d)
+        return random_walks(n_ts=n_ts, sz=size, d=n_dimensions)
 
-    def create_scaled_ts(self, mu, std):
+    def create_and_update_scaled_ts(self, mu, std, ts):
         scaler = TimeSeriesScalerMeanVariance(mu=mu, std=std)
-        self.scaled_ts = scaler.fit_transform(self.random_walk_ts)
+        self._scaled_ts = scaler.fit_transform(ts)
 
     def count_sax_symbols(self):
-        sax_symbol_keys = np.arange(0, self.n_sax_symbols)
-        counters = np.array([[key, np.sum(self.sax_symbols == key)] for key in sax_symbol_keys])
+        sax_symbol_keys = np.arange(0, self.get_n_sax_symbols())
+        counters = np.array([[key, np.sum(self.get_sax_symbols() == key)] for key in sax_symbol_keys])
         return counters
 
-    def generate_sax_symbols(self):
-        sax = SymbolicAggregateApproximation(n_segments=self.n_paa_segments,
-                                             alphabet_size_avg=self.n_sax_symbols,
+    def detach(self, observer):
+        self._observers.remove(observer)
+
+    def generate_and_update_sax_symbols(self, n_paa_segments, n_sax_symbols, ts):
+        sax = SymbolicAggregateApproximation(n_segments=n_paa_segments,
+                                             alphabet_size_avg=n_sax_symbols,
                                              scale=True)
-        self.sax_symbols = sax.fit_transform(self.scaled_ts)
+        self._sax_symbols = sax.fit_transform(ts)
 
-    def set_n_sax_symbols(self, n_sax_symbols: int):
-        if n_sax_symbols < 1:
-            raise ValueError('Ints for n_sax_symbols smaller than 1 forbidden')
-
-        max_n_sax_symbols = 99
-        if n_sax_symbols > max_n_sax_symbols:
-            n_sax_symbols = max_n_sax_symbols
-        self.n_sax_symbols = n_sax_symbols
-
-    def set_n_paa_segments(self, n_paa_segments: int):
-        if n_paa_segments < 1:
-            raise ValueError('Ints for n_paa_segments smaller than 1 forbidden')
-
-        max_n_paa_segments = 99
-        if n_paa_segments > max_n_paa_segments:
-            n_paa_segments = max_n_paa_segments
-        self.n_paa_segments = n_paa_segments
-
-
-
-
+    def notify(self):
+        for observer in self._observers:
+            observer.update(self)

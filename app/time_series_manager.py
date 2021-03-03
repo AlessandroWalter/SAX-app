@@ -41,9 +41,6 @@ class TimeSeriesManager(Subject):
             raise ValueError(error_msg)
         self._n_sax_symbols = n_sax_symbols
 
-    def set_paa_ts(self, paa_ts):
-        self._paa_ts = paa_ts
-
     def get_paa_ts(self):
         return self._paa_ts
 
@@ -55,9 +52,6 @@ class TimeSeriesManager(Subject):
 
     def get_scaled_ts(self):
         return self._scaled_ts
-
-    def set_scaled_ts(self, scaled_ts):
-        self._scaled_ts = scaled_ts
 
     def get_sax_symbols(self):
         return self._sax_symbols

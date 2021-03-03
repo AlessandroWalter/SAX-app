@@ -65,7 +65,6 @@ def test_create_paa_ts_not_none():
     tm.set_base_ts(tm.create_random_walk_ts(1, 250, 1, random_walk_seed))
     tm.create_and_update_scaled_ts(0, 1, tm.get_base_ts())
     tm.set_n_paa_segments(1)
-    tm.set_paa_ts(None)
     tm.create_and_update_paa_ts(tm.get_n_paa_segments(), tm.get_scaled_ts())
     assert tm.get_paa_ts() is not None
 
